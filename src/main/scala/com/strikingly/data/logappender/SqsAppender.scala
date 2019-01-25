@@ -2,6 +2,7 @@ package com.strikingly.data.logappender
 
 import java.io.Serializable
 
+import awscala.sqs.{Queue, SQS}
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder
 import org.apache.logging.log4j.core.{AbstractLifeCycle, Filter, Layout, LogEvent}
 import org.apache.logging.log4j.core.appender.AbstractAppender
@@ -11,18 +12,35 @@ import org.apache.logging.log4j.core.config.plugins.PluginElement
 import org.apache.logging.log4j.core.config.plugins.PluginFactory
 import org.apache.logging.log4j.status.StatusLogger
 
+object SQSService {
+  lazy val region = {
+    val _region = System.getProperty("AWS_REGION")
+    if (_region == null) "cn-north-1"
+    else _region
+  }
+  import awscala.Region
+  implicit lazy val sqs = SQS.at(Region(region))
+
+  def getQueue(name: String): Queue = {
+    sqs.queue(name) match {
+      case Some(queue) => queue
+      case None =>
+        println("create new queue")
+        sqs.createQueueAndReturnQueueName(name)
+    }
+  }
+}
+
 object SqsAppender {
-  lazy val sqsClient = {
+lazy val sqsClient = {
     val region = {
       val _region = System.getProperty("AWS_REGION")
       if (_region == null) "cn-north-1"
       else _region
     }
-    println(s"region: $region")
-    AmazonSQSClientBuilder.standard().withRegion(region).build()
   }
-
   var sqsUrl: String = null
+  var queue: Queue = null
 
   @PluginFactory
   def createAppender(@PluginAttribute("name") name: String,
@@ -35,16 +53,18 @@ object SqsAppender {
       return null
     }
     StatusLogger.getLogger.error(queueName)
-
     println(s"queueName: $queueName")
-    println("queues: " + SqsAppender.sqsClient.listQueues().toString)
-    if (SqsAppender.sqsUrl == null) try
-      SqsAppender.sqsUrl = SqsAppender.sqsClient.getQueueUrl(queueName).getQueueUrl
-    catch {
-      case e: Exception =>
-        println(s"queue name error: $e")
+    if (queue == null) {
+      queue = SQSService.getQueue(queueName)
     }
-    println(queueName)
+
+//    if (SqsAppender.sqsUrl == null) try
+//      SqsAppender.sqsUrl = SqsAppender.sqsClient.getQueueUrl(queueName).getQueueUrl
+//    catch {
+//      case e: Exception =>
+//        println(s"queue name error: $e")
+//    }
+//    println(queueName)
     new SqsAppender(name, filter, layout, ignoreExceptions)
   }
 }
@@ -53,10 +73,13 @@ object SqsAppender {
 class SqsAppender(name: String, filter: Filter, layout: Layout[_ <: Serializable],
                   ignoreExceptions: Boolean) extends AbstractAppender(name, filter, layout, ignoreExceptions) {
   override def append(event: LogEvent): Unit = {
-    import com.amazonaws.services.sqs.model.SendMessageRequest
-    if (SqsAppender.sqsUrl != null) {
-      SqsAppender.sqsClient.sendMessage(new SendMessageRequest(SqsAppender.sqsUrl, getLayout.toSerializable(event).toString))
+    import SQSService.sqs
+    if (SqsAppender.queue != null) {
+      SqsAppender.queue.add(getLayout.toSerializable(event).toString)
     }
+//    if (SqsAppender.sqsUrl != null) {
+//      SqsAppender.sqsClient.sendMessage(new SendMessageRequest(SqsAppender.sqsUrl, getLayout.toSerializable(event).toString))
+//    }
   }
 
 

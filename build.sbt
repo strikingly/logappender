@@ -8,7 +8,7 @@ lazy val log4j2appenders = (project in file(".")).settings(
     // Logging
     log4j2_api, log4j2_core, slf4j, log4j2_slf4j_impl,
     // AWS SQS
-    aws_sqs),
+    aws_sqs, awscala),
   excludeDependencies ++= Seq(
     ExclusionRule("org.slf4j", "slf4j-log4j12"),
     ExclusionRule("ch.qos.logback", "logback-core"),
@@ -23,5 +23,5 @@ val log4j2_slf4j_impl = "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.11.
 // slf4j
 val slf4j = "org.slf4j" % "slf4j-api" % "1.7.25"
 // aws
-//val awscala = "com.github.seratch" %% "awscala" % "0.8.1"
+val awscala = "com.github.seratch" %% "awscala" % "0.8.1"
 val aws_sqs = "com.amazonaws" % "aws-java-sdk-sqs" % "1.11.482"
