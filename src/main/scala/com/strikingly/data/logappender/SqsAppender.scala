@@ -18,6 +18,7 @@ object SqsAppender {
       if (_region == null) "cn-north-1"
       else _region
     }
+    println(s"region: $region")
     AmazonSQSClientBuilder.standard().withRegion(region).build()
   }
 
@@ -35,6 +36,8 @@ object SqsAppender {
     }
     StatusLogger.getLogger.error(queueName)
 
+    println(s"queueName: $queueName")
+    println("queues: " + SqsAppender.sqsClient.listQueues().toString)
     if (SqsAppender.sqsUrl == null) try
       SqsAppender.sqsUrl = SqsAppender.sqsClient.getQueueUrl(queueName).getQueueUrl
     catch {

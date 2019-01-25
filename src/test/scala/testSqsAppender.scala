@@ -1,8 +1,8 @@
 import org.slf4j.LoggerFactory
 
 object testSqsAppender {
-//  val logger = LoggerFactory.getLogger("SQSTestLogger")
-  val logger = LoggerFactory.getLogger(this.getClass.getName)
+  val logger = LoggerFactory.getLogger("SQSTestLogger")
+//  val logger = LoggerFactory.getLogger(this.getClass.getName)
 
   def main(args: Array[String]): Unit = {
     while (true) {
