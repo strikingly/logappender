@@ -11,6 +11,8 @@ import org.apache.logging.log4j.core.config.plugins.PluginAttribute
 import org.apache.logging.log4j.core.config.plugins.PluginElement
 import org.apache.logging.log4j.core.config.plugins.PluginFactory
 import org.apache.logging.log4j.status.StatusLogger
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object SQSService {
   lazy val region = {
@@ -49,11 +51,11 @@ lazy val sqsClient = {
                      @PluginElement("Layout") layout: Layout[_ <: Serializable],
                      @PluginAttribute("ignoreExceptions") ignoreExceptions: Boolean): SqsAppender = {
     if (queueName == null) {
-      println("no queue name provided")
+      StatusLogger.getLogger.error("no queue name provided")
       return null
     }
-    StatusLogger.getLogger.error(queueName)
-    println(s"queueName: $queueName")
+
+    StatusLogger.getLogger.info(s"get SQS queue name: $queueName")
     if (queue == null) {
       queue = SQSService.getQueue(queueName)
     }
@@ -75,7 +77,9 @@ class SqsAppender(name: String, filter: Filter, layout: Layout[_ <: Serializable
   override def append(event: LogEvent): Unit = {
     import SQSService.sqs
     if (SqsAppender.queue != null) {
-      SqsAppender.queue.add(getLayout.toSerializable(event).toString)
+      Future {
+        SqsAppender.queue.add(getLayout.toSerializable(event).toString)
+      }
     }
 //    if (SqsAppender.sqsUrl != null) {
 //      SqsAppender.sqsClient.sendMessage(new SendMessageRequest(SqsAppender.sqsUrl, getLayout.toSerializable(event).toString))
