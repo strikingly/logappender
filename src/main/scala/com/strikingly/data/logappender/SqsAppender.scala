@@ -77,9 +77,9 @@ class SqsAppender(name: String, filter: Filter, layout: Layout[_ <: Serializable
   override def append(event: LogEvent): Unit = {
     import SQSService.sqs
     if (SqsAppender.queue != null) {
-      Future {
+      // Future {
         SqsAppender.queue.add(getLayout.toSerializable(event).toString)
-      }
+      //}
     }
 //    if (SqsAppender.sqsUrl != null) {
 //      SqsAppender.sqsClient.sendMessage(new SendMessageRequest(SqsAppender.sqsUrl, getLayout.toSerializable(event).toString))
